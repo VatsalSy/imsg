@@ -4,6 +4,8 @@ import Testing
 
 @testable import IMsgCore
 
+// swiftlint:disable file_length
+
 private let testPollBundleID =
   "com.apple.messages.MSMessageExtensionBalloonPlugin:0000000000:com.apple.messages.Polls"
 

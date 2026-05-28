@@ -1,5 +1,7 @@
 import Foundation
 
+// swiftlint:disable file_length
+
 public enum MessagePollKind: String, Codable, Sendable, Equatable {
   case created
   case vote
