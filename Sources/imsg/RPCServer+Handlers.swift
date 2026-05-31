@@ -227,7 +227,12 @@ extension RPCServer {
 
     let directChatInfo =
       input.hasChatTarget
-      ? nil : try resolveDirectChatInfo(recipient: input.recipient, service: effectiveService)
+      ? nil
+      : try resolveDirectChatInfo(
+        recipient: input.recipient,
+        service: effectiveService,
+        includeAnyForSMS: service == .auto && effectiveService == .sms
+      )
 
     let allowSMSFallback =
       service == .auto
@@ -477,11 +482,25 @@ extension RPCServer {
     respond(id: id, result: ["ok": true])
   }
 
-  private func resolveDirectChatInfo(recipient: String, service: MessageService) throws -> ChatInfo?
-  {
-    for candidate in ChatTargetResolver.directChatCandidates(recipient: recipient, service: service)
-    {
-      if let info = try store.chatInfo(matchingTarget: candidate) {
+  private func resolveDirectChatInfo(
+    recipient: String,
+    service: MessageService,
+    includeAnyForSMS: Bool = false
+  ) throws -> ChatInfo? {
+    let trimmed = recipient.trimmingCharacters(in: .whitespacesAndNewlines)
+    var candidates = ChatTargetResolver.directChatCandidates(recipient: recipient, service: service)
+    let requireExactMatch = includeAnyForSMS
+    if includeAnyForSMS, !trimmed.isEmpty {
+      candidates = ["SMS;-;\(trimmed)", "any;-;\(trimmed)", "any;+;\(trimmed)"]
+    }
+    for candidate in candidates {
+      let info: ChatInfo?
+      if requireExactMatch {
+        info = try store.chatInfo(matchingExactTarget: candidate)
+      } else {
+        info = try store.chatInfo(matchingTarget: candidate)
+      }
+      if let info {
         return info
       }
     }
